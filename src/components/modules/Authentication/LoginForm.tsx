@@ -28,7 +28,7 @@ export function LoginForm({
         <div className="flex justify-center gap-2 md:justify-start">
           <Link to="/" className="flex items-center gap-2 font-medium mb-5">
             <Logo />
-            <h2 className="text-foreground max-sm:hidden text-3xl font-bold font-tour-title">
+            <h2 className="text-foreground text-2xl font-bold font-tour-title">
               Tour Your <span className="text-primary">Way</span>
             </h2>
           </Link>
