@@ -4,24 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import Password from "@/components/ui/Password";
 import { cn } from "@/lib/utils";
+import { registerSchema } from "@/zodSchema/zodSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router";
 import { z } from "zod";
 
-export const registerSchema = z.object({
-  name: z.string().min(3, { error: "name is to short" }).max(50),
-  email: z.email(),
-  password: z
-    .string()
-    .min(8, { error: "password must be at least 8 character long" }),
-  confirmPassword: z
-    .string()
-    .min(8, { error: "password must be at least 8 character long" })
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Password do not match",
-  path: ["confirmPassword"]
-});
 
 export function RegisterForm({
   className,

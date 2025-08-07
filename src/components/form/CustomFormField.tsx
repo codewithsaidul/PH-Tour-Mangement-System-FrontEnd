@@ -8,9 +8,10 @@ import {
   FormMessage,
 } from "../ui/form";
 import { Input } from "../ui/input";
-import type z from "zod";
-import type { registerSchema } from "../modules/Authentication/RegisterForm";
+import  z from "zod";
+
 import { cloneElement, type ReactElement, type ReactNode } from "react";
+import { registerSchema } from "@/zodSchema/zodSchema";
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
