@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import Password from "@/components/ui/Password";
 import { cn } from "@/lib/utils";
+import { useRegisterMutation } from "@/redux/feature/auth/auth.api";
 import { registerSchema } from "@/zodSchema/zodSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { toast } from "sonner";
 import { z } from "zod";
 
 
@@ -15,6 +17,10 @@ export function RegisterForm({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
+
+  const [ register ] = useRegisterMutation();
+  const navigate = useNavigate();
+
   const form = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -25,8 +31,23 @@ export function RegisterForm({
     },
   });
 
-  const onSubmit = (values: z.infer<typeof registerSchema>) => {
-    console.log(values);
+  const onSubmit = async (values: z.infer<typeof registerSchema>) => {
+      
+    const userInfo = {
+      name: values.name,
+      email: values.email,
+      password: values.password
+    }
+    
+    try {
+      await register(userInfo).unwrap();
+      toast.success("User Created Successfully");
+      navigate("/verify")
+    } catch (error) {
+      console.log(error)
+    }
+
+
   };
 
   return (

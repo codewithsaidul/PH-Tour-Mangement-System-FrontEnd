@@ -10,16 +10,34 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useLoginMutation } from "@/redux/feature/auth/auth.api";
 import { useForm, type FieldValues, type SubmitHandler } from "react-hook-form";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { toast } from "sonner";
+
+type AuthError = { status: number; message: string };
 
 export function LoginForm({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
+  const [login] = useLoginMutation();
   const form = useForm();
+  const navigate = useNavigate();
+
   const onSubmit: SubmitHandler<FieldValues> = async (data) => {
-    console.log(data);
+    try {
+      await login(data).unwrap();
+
+      toast("login successfull");
+    } catch (error) {
+      if (error.status === 401 && error.data.message !== "Incorrect Password") {
+        toast.error(error.data.message);
+        navigate("/verify", { state: data.email});
+      }
+
+      toast.error(error.data.message);
+    }
   };
 
   return (
