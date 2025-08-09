@@ -13,14 +13,28 @@ import {
 } from "@/components/ui/popover";
 import { ModeToggle } from "./ModeToggler";
 import { Link } from "react-router";
-
-// Navigation links array to be used in both desktop and mobile menus
-const navigationLinks = [
-  { href: "/", label: "Home" },
-  { href: "/about", label: "About" },
-];
+import { navigationLinks } from "@/constants";
+import { userApi, useUserProfileQuery } from "@/redux/feature/users/user.api";
+import ProfileAvatar from "./ProfileAvatar";
+import { useLogoutMutation } from "@/redux/feature/auth/auth.api";
+import { toast } from "sonner";
+import { useAppDispatch } from "@/redux/hook";
 
 const Navbar = () => {
+  const { data } = useUserProfileQuery(undefined);
+  const [logout] = useLogoutMutation();
+  const dispatch = useAppDispatch();
+  
+  const handleLogout = async () => {
+    try {
+      await logout(undefined);
+      dispatch(userApi.util.resetApiState())
+      toast.success("Logout Successfully")
+    } catch {
+      toast.error("Logout failed!")
+    }
+  }
+  
   return (
     <header className="border-b">
       <div className="flex container mx-auto px-4 h-16 items-center justify-between gap-4">
@@ -52,9 +66,13 @@ const Navbar = () => {
         {/* Right side */}
         <div className="flex items-center gap-2">
           <ModeToggle />
-          <Button asChild className="text-sm">
-            <Link to="/login">Login</Link>
-          </Button>
+          {data?.data?.email ? (
+              <ProfileAvatar name={data?.data?.name} image={data?.data?.picture} logOutFn={handleLogout} />
+          ) : (
+            <Button asChild className="text-sm">
+              <Link to="/login">Login</Link>
+            </Button>
+          )}
 
           {/* ================= Mobile Menu ==================== */}
           <div className="flex items-center gap-2">

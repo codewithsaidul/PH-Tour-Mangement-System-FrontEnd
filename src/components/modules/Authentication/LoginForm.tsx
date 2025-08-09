@@ -9,13 +9,12 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { envConfig } from "@/config/config";
 import { cn } from "@/lib/utils";
 import { useLoginMutation } from "@/redux/feature/auth/auth.api";
 import { useForm, type FieldValues, type SubmitHandler } from "react-hook-form";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
-
-type AuthError = { status: number; message: string };
 
 export function LoginForm({
   className,
@@ -26,16 +25,26 @@ export function LoginForm({
   const navigate = useNavigate();
 
   const onSubmit: SubmitHandler<FieldValues> = async (data) => {
+    const userInfo = {
+      email: data.email,
+      password: data.password,
+    };
     try {
-      await login(data).unwrap();
+      const res = await login(userInfo).unwrap();
 
-      toast("login successfull");
-    } catch (error) {
-      if (error.status === 401 && error.data.message !== "Incorrect Password") {
-        toast.error(error.data.message);
-        navigate("/verify", { state: data.email});
+      if (res.statusCode === 200 && res.success) {
+        toast.success("login successfull");
+        navigate("/");
       }
-
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      if (
+        error.status === 401 &&
+        error.data.message === "You're not verifed. Please verify your email!"
+      ) {
+        toast.error(error.data.message);
+        navigate("/verify", { state: data.email });
+      }
       toast.error(error.data.message);
     }
   };
@@ -109,6 +118,7 @@ export function LoginForm({
         </div>
 
         <Button
+          onClick={() => window.open(`${envConfig.baseUrl}/auth/google`)}
           type="button"
           variant="outline"
           className="w-full cursor-pointer"
