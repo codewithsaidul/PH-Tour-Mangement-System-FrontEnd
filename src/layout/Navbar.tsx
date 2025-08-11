@@ -20,8 +20,14 @@ import { useLogoutMutation } from "@/redux/feature/auth/auth.api";
 import { toast } from "sonner";
 import { useAppDispatch } from "@/redux/hook";
 
+
+
+
+const preloadLogin = () => import("@/pages/auth/Login");
+
+
 const Navbar = () => {
-  const { data } = useUserProfileQuery(undefined);
+  const { data: userInfo } = useUserProfileQuery(undefined);
   const [logout] = useLogoutMutation();
   const dispatch = useAppDispatch();
   
@@ -66,10 +72,10 @@ const Navbar = () => {
         {/* Right side */}
         <div className="flex items-center gap-2">
           <ModeToggle />
-          {data?.data?.email ? (
-              <ProfileAvatar name={data?.data?.name} image={data?.data?.picture} logOutFn={handleLogout} />
+          {userInfo?.data?.email ? (
+              <ProfileAvatar name={userInfo?.data?.name} userRole={userInfo?.data?.role} image={userInfo?.data?.picture} logOutFn={handleLogout} />
           ) : (
-            <Button asChild className="text-sm">
+            <Button asChild onMouseEnter={preloadLogin} className="text-sm">
               <Link to="/login">Login</Link>
             </Button>
           )}

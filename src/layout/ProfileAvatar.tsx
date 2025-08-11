@@ -6,16 +6,29 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { dashboardLinks, role } from "@/constants";
 import { useMediaQuery } from "react-responsive";
+import { Link } from "react-router";
 
 interface IAvatarProps {
   name: string;
   image?: string;
+  userRole: string;
   logOutFn: () => Promise<void>;
 }
 
-const ProfileAvatar = ({ name, image, logOutFn }: IAvatarProps) => {
+const ProfileAvatar = ({ name, image, userRole, logOutFn }: IAvatarProps) => {
   const isMobile = useMediaQuery({ maxWidth: 1023 });
+
+  // get the dashboard route according user role
+  const goToDashboard =
+    userRole === role.superAdmin
+      ? dashboardLinks.superAdmin as string
+      : userRole === role.admin
+      ? dashboardLinks.admin as string
+      : userRole === role.user
+      ? dashboardLinks.user as string
+      : dashboardLinks.guide as string;
 
   return (
     <DropdownMenu>
@@ -27,9 +40,15 @@ const ProfileAvatar = ({ name, image, logOutFn }: IAvatarProps) => {
           <AvatarFallback>{name}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align={isMobile ? "end" : "start"}>
+      <DropdownMenuContent
+        className="max-w-fit mt-3"
+        align={isMobile ? "end" : "start"}
+      >
         <DropdownMenuItem className="cursor-pointer">
           My Account
+        </DropdownMenuItem>
+        <DropdownMenuItem className="cursor-pointer">
+          <Link to={goToDashboard}>Dashboard</Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={logOutFn} className="cursor-pointer">
