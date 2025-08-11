@@ -8,10 +8,12 @@ const Footer = () => {
         <div className="mx-auto container space-y-8 px-4 py-16 lg:space-y-16">
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
             <div>
-              <div className="text-primary">
-                <Link to="/" className="flex items-center gap-2">
+              <div>
+                <Link to="/" className="flex items-center gap-3">
                   <Logo />
-                  <h2 className="text-3xl">Travel Your Way</h2>
+                  <h2 className="text-foreground text-3xl font-bold font-tour-title">
+                    Tour Your <span className="text-primary">Way</span>
+                  </h2>
                 </Link>
               </div>
 
