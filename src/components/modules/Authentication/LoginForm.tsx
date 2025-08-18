@@ -44,6 +44,9 @@ export function LoginForm({
       ) {
         toast.error(error.data.message);
         navigate("/verify", { state: data.email });
+        return;
+      } else if (error.data === "Network Error" && !error.status) {
+        return toast.error(error.data);
       }
       toast.error(error.data.message);
     }
@@ -67,7 +70,7 @@ export function LoginForm({
       </div>
       <div className="grid gap-6">
         <Form {...form}>
-          <form  onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
               name="email"
@@ -105,7 +108,7 @@ export function LoginForm({
               )}
             />
 
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full cursor-pointer">
               Login
             </Button>
           </form>
