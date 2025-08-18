@@ -3,7 +3,7 @@ import type { ComponentType } from "react";
 export type { ISendOtp, IVeriyOTP, ILogin, IAuthResponse } from "./auth.types";
 export type { TRole } from "./user.types"
 export type { IAddTourType, ITourType } from "./tour.types"
-
+export type { IDivision, IAddDivision } from "./division.types"
 
 
 export interface IResponse<T> {
