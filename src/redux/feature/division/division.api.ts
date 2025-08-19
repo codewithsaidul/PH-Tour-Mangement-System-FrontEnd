@@ -3,6 +3,15 @@ import type { IDivision, IResponse } from "@/types";
 
 export const divisionApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
+    getAllDivision: builder.query({
+      query: () => ({
+        url: "/division",
+        method: "GET",
+      }),
+      transformResponse: (response) => response.data,
+      providesTags: ["Division"],
+    }),
+
     addDivision: builder.mutation<IResponse<IDivision>, FormData>({
       query: (division) => ({
         url: "/division/create",
@@ -11,15 +20,7 @@ export const divisionApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Division"],
     }),
-    getTourTypes: builder.query({
-      query: () => ({
-        url: "/tour/tour-types",
-        method: "GET",
-      }),
-      transformResponse: (response) => response.data,
-      providesTags: ["Tour Type"],
-    }),
   }),
 });
 
-export const { useAddDivisionMutation } = divisionApi;
+export const { useGetAllDivisionQuery, useAddDivisionMutation } = divisionApi;
