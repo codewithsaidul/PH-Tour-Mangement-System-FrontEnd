@@ -1,3 +1,4 @@
+import MultipleImageUploader from "@/components/ImageUploader/MultipleImageUploader";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -30,35 +31,28 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import type { FileMetadata } from "@/hooks/use-file-upload";
 import { cn } from "@/lib/utils";
 import { useGetAllDivisionQuery } from "@/redux/feature/division/division.api";
 import { useGetTourTypesQuery } from "@/redux/feature/tour/tour.api";
+import { tourSchema } from "@/zodSchema/zodSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, formatISO } from "date-fns";
 import { CalendarIcon } from "lucide-react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import z from "zod";
 
-const tourSchema = z.object({
-  title: z
-    .string()
-    .nonempty("Title is required")
-    .min(3, "title must be contain at least 3 characters minimum"),
-  description: z
-    .string()
-    .nonempty("Description is required")
-    .min(20, "Description must be contain at least 20 characters minimum"),
-  startDate: z.date({ message: "Start Date is required" }),
-  endDate: z.date({ message: "End Date is required" }),
-  division: z.string().min(1, "Division is required"),
-  tourType: z.string().min(1, "Tour Types is requird"),
-});
+
 
 const AddTour = () => {
   const { data: divisionData, isLoading: divisionLoading } =
     useGetAllDivisionQuery(undefined);
   const { data: tourTypeData, isLoading: tourTypeLoading } =
     useGetTourTypesQuery(undefined);
+
+
+  const [ images, setImages ] = useState<(File | FileMetadata)[] | []>([])
 
   const form = useForm<z.infer<typeof tourSchema>>({
     resolver: zodResolver(tourSchema),
@@ -69,6 +63,8 @@ const AddTour = () => {
       tourType: "",
     },
   });
+
+
 
   const divisionOptions = divisionData?.map(
     (item: { _id: string; name: string }) => ({
@@ -90,6 +86,20 @@ const AddTour = () => {
       endDate: formatISO(values.endDate),
     };
     console.log(tourData);
+
+    const formData = new FormData();
+    
+
+    formData.append("data", JSON.stringify(tourData))
+
+    images.forEach((image) => {
+      if (image instanceof File) {
+        formData.append("files", image);
+      }
+    })
+
+
+    console.log(formData.get("files"))
   };
 
   return (
@@ -290,23 +300,27 @@ const AddTour = () => {
               </div>
 
               {/* ========== tour description ======================= */}
-              <div>
+              <div className="flex flex-col min-[500px]:flex-row gap-5">
                 <FormField
                   control={form.control}
                   name="description"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="flex-1">
                       <FormLabel>Description</FormLabel>
                       <FormControl>
                         <Textarea
                           {...field}
-                          className="resize-none h-40 no-scrollbar"
+                          className="resize-none h-52 no-scrollbar w-full"
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                <div className="flex-1 mt-5">
+                  <MultipleImageUploader onChange={setImages} />
+                </div>
               </div>
             </form>
           </Form>
