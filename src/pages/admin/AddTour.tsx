@@ -43,16 +43,13 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import z from "zod";
 
-
-
 const AddTour = () => {
   const { data: divisionData, isLoading: divisionLoading } =
     useGetAllDivisionQuery(undefined);
   const { data: tourTypeData, isLoading: tourTypeLoading } =
     useGetTourTypesQuery(undefined);
 
-
-  const [ images, setImages ] = useState<(File | FileMetadata)[] | []>([])
+  const [images, setImages] = useState<(File | FileMetadata)[] | []>([]);
 
   const form = useForm<z.infer<typeof tourSchema>>({
     resolver: zodResolver(tourSchema),
@@ -63,8 +60,6 @@ const AddTour = () => {
       tourType: "",
     },
   });
-
-
 
   const divisionOptions = divisionData?.map(
     (item: { _id: string; name: string }) => ({
@@ -79,27 +74,22 @@ const AddTour = () => {
     })
   );
 
-  const onSubmit = (values: z.infer<typeof tourSchema>) => {
+  const onSubmit = async (values: z.infer<typeof tourSchema>) => {
     const tourData = {
       ...values,
       startDate: formatISO(values.startDate),
       endDate: formatISO(values.endDate),
     };
-    console.log(tourData);
 
     const formData = new FormData();
-    
 
-    formData.append("data", JSON.stringify(tourData))
+    formData.append("data", JSON.stringify(tourData));
 
     images.forEach((image) => {
       if (image instanceof File) {
         formData.append("files", image);
       }
-    })
-
-
-    console.log(formData.get("files"))
+    });
   };
 
   return (
@@ -327,7 +317,11 @@ const AddTour = () => {
         </CardContent>
 
         <CardFooter className="flex justify-end">
-          <Button type="submit" form="add-tour-form" className="cursor-pointer">
+          <Button
+            type="submit"
+            form="add-tour-form"
+            className="cursor-pointer"
+          >
             Create Tour
           </Button>
         </CardFooter>
