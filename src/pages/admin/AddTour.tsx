@@ -34,39 +34,72 @@ import { Textarea } from "@/components/ui/textarea";
 import type { FileMetadata } from "@/hooks/use-file-upload";
 import { cn } from "@/lib/utils";
 import { useGetAllDivisionQuery } from "@/redux/feature/division/division.api";
-import { useAddTourMutation, useGetTourTypesQuery } from "@/redux/feature/tour/tour.api";
+import {
+  useAddTourMutation,
+  useGetTourTypesQuery,
+} from "@/redux/feature/tour/tour.api";
 import { tourSchema } from "@/zodSchema/zodSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, formatISO } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
-
-
 
 const AddTour = () => {
   const { data: divisionData, isLoading: divisionLoading } =
     useGetAllDivisionQuery(undefined);
   const { data: tourTypeData, isLoading: tourTypeLoading } =
     useGetTourTypesQuery(undefined);
-  const [addTour, { isLoading: addTourLoading}] = useAddTourMutation();
-
-
-  const [ images, setImages ] = useState<(File | FileMetadata)[] | []>([])
+  const [addTour, { isLoading: addTourLoading }] = useAddTourMutation();
+  const [images, setImages] = useState<(File | FileMetadata)[] | []>([]);
 
   const form = useForm<z.infer<typeof tourSchema>>({
     resolver: zodResolver(tourSchema),
     defaultValues: {
-      title: "Cox's Bazar Beach Adventure",
-      description: "",
+      title: "Dhaka to Rajshahi Heritage Tour",
+      description:
+        "Discover the historical treasures of Rajshahi, known as the 'Silk City' of Bangladesh. Explore ancient Buddhist ruins at Paharpur, visit the magnificent Puthia Palace complex, and experience the rich cultural heritage of north Bengal. Perfect for history enthusiasts and cultural explorers.",
+      location: "Rajshahi",
+      costFrom: "12000",
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days later
+      departureLocation: "Dhaka",
+      arrivalLocation: "Rajshahi",
+      included: [
+        { value: "Accommodation for 2 nights" },
+        { value: "All meals (breakfast, lunch, dinner)" },
+        { value: "Transportation (AC bus)" },
+        { value: "Professional tour guide" },
+        { value: "Entry fees to all historical sites" },
+        { value: "Paharpur monastery visit" },
+      ],
+      excluded: [
+        { value: "Personal expenses" },
+        { value: "Extra activities not mentioned" },
+        { value: "Travel insurance" },
+        { value: "Shopping expenses" },
+        { value: "Photography charges at monuments" },
+      ],
+      amenities: [
+        { value: "Comfortable hotel rooms" },
+        { value: "Free WiFi" },
+        { value: "Air conditioning" },
+        { value: "Local transportation" },
+        { value: "Cultural performance evening" },
+      ],
+      tourPlan: [
+        { value: "Day 1: Arrival in Rajshahi and Puthia Palace complex tour" },
+        { value: "Day 2: Paharpur Buddhist monastery and Mahasthangarh visit" },
+        { value: "Day 3: Rajshahi city tour and silk weaving centers" },
+      ],
+      maxGuest: "20",
+      minAge: "8",
       division: "",
       tourType: "",
     },
   });
-
-
 
   const divisionOptions = divisionData?.map(
     (item: { _id: string; name: string }) => ({
@@ -74,6 +107,7 @@ const AddTour = () => {
       label: item.name,
     })
   );
+
   const tourTypeOptions = tourTypeData?.data?.map(
     (item: { _id: string; name: string }) => ({
       value: item._id,
@@ -81,40 +115,95 @@ const AddTour = () => {
     })
   );
 
-  const onSubmit = async (values: z.infer<typeof tourSchema>) => {
+  const {
+    fields: includedFields,
+    append: appendIncluded,
+    remove: removeIncluded,
+  } = useFieldArray({
+    control: form.control,
+    name: "included",
+  });
 
-    const toastId = toast.loading("New Tour Adding")
+  const {
+    fields: excludedFields,
+    append: appendExcluded,
+    remove: removeExcluded,
+  } = useFieldArray({
+    control: form.control,
+    name: "excluded",
+  });
+
+  const {
+    fields: amenitiesFields,
+    append: appendAmenities,
+    remove: removeAmenities,
+  } = useFieldArray({
+    control: form.control,
+    name: "amenities",
+  });
+
+  const {
+    fields: tourPlanFields,
+    append: appendTourPlan,
+    remove: removeTourPlan,
+  } = useFieldArray({
+    control: form.control,
+    name: "tourPlan",
+  });
+
+  const onSubmit = async (values: z.infer<typeof tourSchema>) => {
+    const toastId = toast.loading("Creating tour....");
+
+    if (images.length === 0) {
+      toast.error("Please add some images", { id: toastId });
+      return;
+    }
 
     const tourData = {
       ...values,
+      costFrom: Number(values.costFrom),
+      minAge: Number(values.minAge),
+      maxGuest: Number(values.maxGuest),
       startDate: formatISO(values.startDate),
       endDate: formatISO(values.endDate),
+      included:
+        values.included[0].value === ""
+          ? []
+          : values.included.map((item: { value: string }) => item.value),
+      excluded:
+        values.included[0].value === ""
+          ? []
+          : values.excluded.map((item: { value: string }) => item.value),
+      amenities:
+        values.amenities[0].value === ""
+          ? []
+          : values.amenities.map((item: { value: string }) => item.value),
+      tourPlan:
+        values.tourPlan[0].value === ""
+          ? []
+          : values.tourPlan.map((item: { value: string }) => item.value),
     };
 
-
     const formData = new FormData();
-    
 
-    formData.append("data", JSON.stringify(tourData))
+    formData.append("data", JSON.stringify(tourData));
 
     images.forEach((image) => {
       if (image instanceof File) {
         formData.append("files", image);
       }
-    })
-
+    });
 
     try {
       const res = await addTour(formData).unwrap();
 
       if (res.success && res.statusCode === 201) {
-        toast.success(res.message, { id: toastId })
+        toast.success(res.message, { id: toastId });
       }
 
-      console.log(res)
-
+      console.log(res);
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
   };
 
@@ -141,6 +230,66 @@ const AddTour = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tour Title</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* ================ cost & location */}
+              <div className="flex gap-5">
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>Location</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="costFrom"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>Cost</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* =================== depreture & arival location */}
+              <div className="flex gap-5">
+                <FormField
+                  control={form.control}
+                  name="departureLocation"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>Departure Location</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="arrivalLocation"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>Arrival Location</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
@@ -315,13 +464,13 @@ const AddTour = () => {
                 />
               </div>
 
-              {/* ========== tour description ======================= */}
-              <div className="flex flex-col min-[500px]:flex-row gap-5">
+              {/* ========== tour description & images ======================= */}
+              <div className="flex flex-col min-[920px]:flex-row gap-5">
                 <FormField
                   control={form.control}
                   name="description"
                   render={({ field }) => (
-                    <FormItem className="flex-1">
+                    <FormItem className="flex-1 max-[920px]:order-2">
                       <FormLabel>Description</FormLabel>
                       <FormControl>
                         <Textarea
@@ -338,12 +487,191 @@ const AddTour = () => {
                   <MultipleImageUploader onChange={setImages} />
                 </div>
               </div>
+
+              <div className="border-t border-muted w-full "></div>
+
+              {/* =========== included =================== */}
+              <div>
+                <div className="flex justify-between">
+                  <p className="font-semibold">Included</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => appendIncluded({ value: "" })}
+                  >
+                    <Plus />
+                  </Button>
+                </div>
+
+                <div className="space-y-4 mt-4">
+                  {includedFields.map((item, index) => (
+                    <div className="flex gap-2" key={item.id}>
+                      <FormField
+                        control={form.control}
+                        name={`included.${index}.value`}
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <Button
+                        onClick={() => removeIncluded(index)}
+                        variant="destructive"
+                        className="!bg-red-700"
+                        size="icon"
+                        type="button"
+                      >
+                        <Trash2 />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* ============== excluded ==================== */}
+              <div>
+                <div className="flex justify-between">
+                  <p className="font-semibold">Excluded</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => appendExcluded({ value: "" })}
+                  >
+                    <Plus />
+                  </Button>
+                </div>
+
+                <div className="space-y-4 mt-4">
+                  {excludedFields.map((item, index) => (
+                    <div className="flex gap-2" key={item.id}>
+                      <FormField
+                        control={form.control}
+                        name={`excluded.${index}.value`}
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <Button
+                        onClick={() => removeExcluded(index)}
+                        variant="destructive"
+                        className="!bg-red-700"
+                        size="icon"
+                        type="button"
+                      >
+                        <Trash2 />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* ============== Amenities ==================== */}
+              <div>
+                <div className="flex justify-between">
+                  <p className="font-semibold">Amenities</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => appendAmenities({ value: "" })}
+                  >
+                    <Plus />
+                  </Button>
+                </div>
+
+                <div className="space-y-4 mt-4">
+                  {amenitiesFields.map((item, index) => (
+                    <div className="flex gap-2" key={item.id}>
+                      <FormField
+                        control={form.control}
+                        name={`amenities.${index}.value`}
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <Button
+                        onClick={() => removeAmenities(index)}
+                        variant="destructive"
+                        className="!bg-red-700"
+                        size="icon"
+                        type="button"
+                      >
+                        <Trash2 />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* ==================== tour plan ===========================  */}
+              <div>
+                <div className="flex justify-between">
+                  <p className="font-semibold">Tour Plan</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => appendTourPlan({ value: "" })}
+                  >
+                    <Plus />
+                  </Button>
+                </div>
+
+                <div className="space-y-4 mt-4">
+                  {tourPlanFields.map((item, index) => (
+                    <div className="flex gap-2" key={item.id}>
+                      <FormField
+                        control={form.control}
+                        name={`tourPlan.${index}.value`}
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <Button
+                        onClick={() => removeTourPlan(index)}
+                        variant="destructive"
+                        className="!bg-red-700"
+                        size="icon"
+                        type="button"
+                      >
+                        <Trash2 />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </form>
           </Form>
         </CardContent>
 
         <CardFooter className="flex justify-end">
-          <Button type="submit" form="add-tour-form" disabled={addTourLoading} className="cursor-pointer">
+          <Button
+            type="submit"
+            form="add-tour-form"
+            disabled={addTourLoading}
+            className="cursor-pointer"
+          >
             Create Tour
           </Button>
         </CardFooter>
