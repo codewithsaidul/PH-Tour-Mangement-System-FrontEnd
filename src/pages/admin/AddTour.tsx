@@ -34,22 +34,27 @@ import { Textarea } from "@/components/ui/textarea";
 import type { FileMetadata } from "@/hooks/use-file-upload";
 import { cn } from "@/lib/utils";
 import { useGetAllDivisionQuery } from "@/redux/feature/division/division.api";
-import { useGetTourTypesQuery } from "@/redux/feature/tour/tour.api";
+import { useAddTourMutation, useGetTourTypesQuery } from "@/redux/feature/tour/tour.api";
 import { tourSchema } from "@/zodSchema/zodSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, formatISO } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import z from "zod";
+
+
 
 const AddTour = () => {
   const { data: divisionData, isLoading: divisionLoading } =
     useGetAllDivisionQuery(undefined);
   const { data: tourTypeData, isLoading: tourTypeLoading } =
     useGetTourTypesQuery(undefined);
+  const [addTour, { isLoading: addTourLoading}] = useAddTourMutation();
 
-  const [images, setImages] = useState<(File | FileMetadata)[] | []>([]);
+
+  const [ images, setImages ] = useState<(File | FileMetadata)[] | []>([])
 
   const form = useForm<z.infer<typeof tourSchema>>({
     resolver: zodResolver(tourSchema),
@@ -60,6 +65,8 @@ const AddTour = () => {
       tourType: "",
     },
   });
+
+
 
   const divisionOptions = divisionData?.map(
     (item: { _id: string; name: string }) => ({
@@ -75,21 +82,40 @@ const AddTour = () => {
   );
 
   const onSubmit = async (values: z.infer<typeof tourSchema>) => {
+
+    const toastId = toast.loading("New Tour Adding")
+
     const tourData = {
       ...values,
       startDate: formatISO(values.startDate),
       endDate: formatISO(values.endDate),
     };
 
-    const formData = new FormData();
 
-    formData.append("data", JSON.stringify(tourData));
+    const formData = new FormData();
+    
+
+    formData.append("data", JSON.stringify(tourData))
 
     images.forEach((image) => {
       if (image instanceof File) {
         formData.append("files", image);
       }
-    });
+    })
+
+
+    try {
+      const res = await addTour(formData).unwrap();
+
+      if (res.success && res.statusCode === 201) {
+        toast.success(res.message, { id: toastId })
+      }
+
+      console.log(res)
+
+    } catch (error) {
+      console.log(error)
+    }
   };
 
   return (
@@ -317,11 +343,7 @@ const AddTour = () => {
         </CardContent>
 
         <CardFooter className="flex justify-end">
-          <Button
-            type="submit"
-            form="add-tour-form"
-            className="cursor-pointer"
-          >
+          <Button type="submit" form="add-tour-form" disabled={addTourLoading} className="cursor-pointer">
             Create Tour
           </Button>
         </CardFooter>
