@@ -201,9 +201,18 @@ const AddTour = () => {
         toast.success(res.message, { id: toastId });
       }
 
-      console.log(res);
-    } catch (error) {
-      console.log(error);
+    } catch (error: unknown) {
+       if (
+        error &&
+        typeof error === "object" &&
+        "data" in error &&
+        error.data &&
+        typeof (error as { data: { message: unknown } }).data.message === "string"
+      ) {
+        toast.error((error as { data: { message: string } }).data.message);
+      } else {
+        toast.error("An unexpected error occurred.");
+      }
     }
   };
 
